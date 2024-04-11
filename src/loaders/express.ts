@@ -15,7 +15,7 @@ export default async ({ app }: { app: Application }) => {
   app.use(cors());
   app.use(express.json());
   const uploads=path.join(__dirname+'../../../')
-  app.use("/src/",express.static(uploads))
+  app.use("/",express.static(uploads))
   app.use(bodyParser.urlencoded({ extended: true }));
 
   app.use("/users", userRoute);

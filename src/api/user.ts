@@ -11,6 +11,7 @@ import {
   changeUserPasswordValidation,
   updateUserValidation,
   userParamValidation,
+  forgotPasswordUserValidation,
 } from "../middleware/validation/user";
 import transporter from "../utils/transporter";
 import config from "../config/index";
@@ -178,6 +179,21 @@ router.get(
     const userService = new UserService();
 
     const { status, result } = await userService.status();
+
+    res.status(status).json(result);
+  }
+);
+
+router.patch(
+  "/forgotPassword",
+  forgotPasswordUserValidation,
+  handleValidationError,
+  async (req: Request, res: Response) => {
+    const {email} = req.body;
+
+    const userService = new UserService();
+
+    const { status, result } = await userService.forgotPassword(email);
 
     res.status(status).json(result);
   }

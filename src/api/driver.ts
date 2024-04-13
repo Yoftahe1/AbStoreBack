@@ -8,6 +8,7 @@ import {
   updateDriverValidation,
   signInDriverValidation,
   changeDriverPasswordValidation,
+  forgotPasswordDriverValidation,
 } from "../middleware/validation/driver";
 import DriverService from "../services/driver";
 import authorization from "../middleware/auth/authorization";
@@ -128,6 +129,21 @@ router.post(
     const driverService = new DriverService();
 
     const { status, result } = await driverService.signIn(signInDto);
+
+    res.status(status).json(result);
+  }
+);
+
+router.patch(
+  "/forgotPassword",
+  forgotPasswordDriverValidation,
+  handleValidationError,
+  async (req: Request, res: Response) => {
+    const {email} = req.body;
+
+    const driverService = new DriverService();
+
+    const { status, result } = await driverService.forgotPassword(email);
 
     res.status(status).json(result);
   }

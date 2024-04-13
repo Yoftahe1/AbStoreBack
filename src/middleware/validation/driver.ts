@@ -71,8 +71,13 @@ const signInDriverValidation = [
   body("password").trim().notEmpty().withMessage("password filed is required"),
 ];
 
+const forgotPasswordDriverValidation = [
+  body("email").trim().isEmail().withMessage("Email filed is required"),
+];
+
 export {
   driverQueryValidation,
+  forgotPasswordDriverValidation,
   driverParamValidation,
   signInDriverValidation,
   updateDriverValidation,

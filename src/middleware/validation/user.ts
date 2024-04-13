@@ -97,6 +97,11 @@ const userParamValidation = [
     .isString()
     .withMessage("Admin id must be valid mongodb object id"),
 ];
+
+const forgotPasswordUserValidation = [
+  body("email").trim().isEmail().withMessage("Email filed is required"),
+];
+
 export {
   banUser,
   userParamValidation,
@@ -104,5 +109,6 @@ export {
   createUserValidation,
   signInUserValidation,
   updateUserValidation,
+  forgotPasswordUserValidation,
   changeUserPasswordValidation,
 };

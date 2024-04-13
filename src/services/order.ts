@@ -24,6 +24,9 @@ export default class OrderService {
 
       const orders = await Order.aggregate([
         {
+          $sort: { createdAt: -1 },
+        },
+        {
           $lookup: {
             from: "users",
             localField: "userId",
@@ -37,7 +40,6 @@ export default class OrderService {
             ...getUser,
           },
         },
-
         {
           $project: {
             key: "$_id",
@@ -53,6 +55,7 @@ export default class OrderService {
             productCount: { $size: "$products" },
           },
         },
+
       ])
         .skip((page - 1) * pageSize)
         .limit(pageSize);
@@ -104,7 +107,8 @@ export default class OrderService {
 
   async create(products: IProduct[], userId: string, email: string) {
     try {
-      let totalPrice = 0;
+      let totalPrice = 20;
+
       for (const item of products) {
         const product = await Product.findById(item.id);
 
@@ -119,7 +123,7 @@ export default class OrderService {
             if (item.quantity < 1) {
               const response = new Response();
 
-              return response.internalError(
+              return response.notFound(
                 `Product ${item.id} with color ${item.color} quantity can't be less than one.`
               );
             } else if (color[0].quantity < item.quantity) {
@@ -134,7 +138,7 @@ export default class OrderService {
           } else {
             const response = new Response();
 
-            return response.internalError(
+            return response.notFound(
               `Product ${item.id} with color ${item.color} doesn't exist.`
             );
           }
@@ -155,11 +159,12 @@ export default class OrderService {
         totalPrice,
         verificationKey,
       });
-      const result = await order.save();
 
       const message = orderVerification(email, verificationKey);
 
       await transporter.sendMail(message);
+
+      const result = await order.save();
 
       for (const item of products) {
         const product = await Product.findById(item.id);
@@ -182,7 +187,7 @@ export default class OrderService {
 
       const response = new Response();
       return response.created(
-        { id: result._id },
+        { id: "result._id" },
         "Order has been created successfully."
       );
     } catch (error) {

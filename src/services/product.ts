@@ -55,8 +55,8 @@ export default class ProductService {
             images: 1,
             category: 1,
             description: 1,
-            price:1,
-            types:1,
+            price: 1,
+            types: 1,
             rating: { $ifNull: [{ $avg: "$ratings.rating" }, 0] },
           },
         },
@@ -131,7 +131,7 @@ export default class ProductService {
     }
   }
 
-  async create(newProduct: IProduct,images:string[]) {
+  async create(newProduct: IProduct, images: string[]) {
     const { name, description, price, category, types } = newProduct;
 
     try {
@@ -279,6 +279,23 @@ export default class ProductService {
         return response.notFound("Product doesn't exist.");
       }
 
+      const alreadyRated = productExists.ratings?.findIndex(
+        (r) => r.userId.toString() === userId
+      );
+
+
+      if (typeof alreadyRated === "number" && alreadyRated > -1) {
+        await Product.findOneAndUpdate(
+          { _id: id, "ratings.userId": userId },
+          { $set: { "ratings.$.rating": rating } },
+          { new: true }
+        );
+
+        const response = new Response();
+
+        return response.success({ id }, "Product rating has been updated");
+      }
+
       await Product.findByIdAndUpdate(id, {
         $push: { ratings: { rating, userId } },
       });
@@ -286,6 +303,40 @@ export default class ProductService {
       const response = new Response();
 
       return response.success({ id }, "Product has been rated successfully");
+    } catch (error) {
+      const response = new Response();
+
+      return response.internalError(error);
+    }
+  }
+
+  async myRating(params: IParams, { userId }: { userId: string }) {
+    const { id } = params;
+    try {
+      const productExists = await Product.findById(id);
+
+      if (!productExists) {
+        const response = new Response();
+
+        return response.notFound("Product doesn't exist.");
+      }
+
+      const alreadyRated = productExists.ratings?.findIndex(
+        (r) => {
+          return r.userId.toString() === userId}
+      );
+
+      let myRating: number;
+      typeof alreadyRated === "number" && alreadyRated > -1
+        ? (myRating = productExists.ratings![alreadyRated].rating)
+        : (myRating = 0);
+
+      const response = new Response();
+
+      return response.success(
+        { myRating },
+        "your rating have been fetched successfully"
+      );
     } catch (error) {
       const response = new Response();
 

@@ -86,11 +86,12 @@ export default class AdminService {
         email: email.toLowerCase(),
         password: hashedPassword,
       });
-      const result = await admin.save();
 
       const message = adminAdd(email, password);
 
       await transporter.sendMail(message);
+
+      const result = await admin.save();
 
       const response = new Response();
 
@@ -99,7 +100,7 @@ export default class AdminService {
         "Admin has been create successfully"
       );
     } catch (error) {
-      console.log(error)
+      console.log(error);
       const response = new Response();
 
       return response.internalError(error);

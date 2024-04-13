@@ -16,8 +16,9 @@ import Driver from "../models/driver";
 import Response from "../utils/response";
 import transporter from "../utils/transporter";
 import registration from "../email/registration";
-import { driverAdd } from "../email";
+import { driverAdd, forgotPassword } from "../email";
 import Order from "../models/order";
+import Otp from "../models/otp";
 
 export default class DriverService {
   async getDrivers({ page }: IDriverQuery) {
@@ -82,11 +83,12 @@ export default class DriverService {
         email: email.toLowerCase(),
         password: hashedPassword,
       });
-      const result = await driver.save();
 
       const message = driverAdd(email, password);
 
       await transporter.sendMail(message);
+      
+      const result = await driver.save();
 
       const response = new Response();
 
@@ -234,9 +236,25 @@ export default class DriverService {
       const passwordMatch = await bcrypt.compare(password, driver.password);
 
       if (!passwordMatch) {
-        const response = new Response();
+        const otpRecord = await Otp.findOne({ userId: driver._id })
+          .sort({ createdAt: -1 })
+          .exec();
 
-        return response.conflict("Email and password don't match.");
+        if (!otpRecord) {
+          const response = new Response();
+
+          return response.conflict("Email and password don't match.");
+        }
+
+        const otpMatch = await bcrypt.compare(password, otpRecord.otp);
+
+        if (!otpMatch) {
+          const response = new Response();
+
+          return response.conflict("Email and otp don't match.");
+        }
+
+        await Otp.deleteMany({ userId: driver._id });
       }
 
       const payload = {
@@ -258,4 +276,43 @@ export default class DriverService {
       return response.internalError(error);
     }
   }
+
+  async forgotPassword(email: string) {
+    try {
+      const driver = await Driver.findOne({ email });
+
+      if (!driver) {
+        const response = new Response();
+
+        return response.conflict("Driver doesn't exist.");
+      }
+
+      const password = uuidv4();
+
+      const hashedPassword = await bcrypt.hash(password, config.saltRound);
+
+      const otp = new Otp({
+        userId: driver._id,
+        otp: hashedPassword,
+      });
+
+      await otp.save();
+
+      const message = forgotPassword(email, password);
+
+      await transporter.sendMail(message);
+
+      const response = new Response();
+
+      return response.success(
+        { id: driver._id },
+        "One time password has been sent successfully."
+      );
+    } catch (error) {
+      const response = new Response();
+
+      return response.internalError(error);
+    }
+  }
+
 }

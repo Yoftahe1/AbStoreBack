@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
 
 import config from "../config";
 import Response from "../utils/response";
@@ -14,6 +15,9 @@ import {
   IUserUpdate,
 } from "../types/user";
 import User from "../models/user";
+import Otp from "../models/otp";
+import transporter from "../utils/transporter";
+import { forgotPassword } from "../email";
 
 export default class UserService {
   async getUsers({ page, isBanned }: IUserQuery) {
@@ -325,9 +329,25 @@ export default class UserService {
       const passwordMatch = await bcrypt.compare(password, user.password);
 
       if (!passwordMatch) {
-        const response = new Response();
+        const otpRecord = await Otp.findOne({ userId: user._id })
+          .sort({ createdAt: -1 })
+          .exec();
 
-        return response.conflict("Email and password don't match.");
+        if (!otpRecord) {
+          const response = new Response();
+
+          return response.conflict("Email and password don't match.");
+        }
+
+        const otpMatch = await bcrypt.compare(password, otpRecord.otp);
+
+        if (!otpMatch) {
+          const response = new Response();
+
+          return response.conflict("Email and otp don't match.");
+        }
+
+        await Otp.deleteMany({ userId: user._id });
       }
 
       const payload = {
@@ -354,4 +374,43 @@ export default class UserService {
       return response.internalError(error);
     }
   }
+
+  async forgotPassword(email: string) {
+    try {
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        const response = new Response();
+
+        return response.conflict("User doesn't exist.");
+      }
+
+      const password = uuidv4();
+
+      const hashedPassword = await bcrypt.hash(password, config.saltRound);
+
+      const otp = new Otp({
+        userId: user._id,
+        otp: hashedPassword,
+      });
+
+      await otp.save();
+
+      const message = forgotPassword(email, password);
+
+      await transporter.sendMail(message);
+
+      const response = new Response();
+
+      return response.success(
+        { id: user._id },
+        "One time password has been sent successfully."
+      );
+    } catch (error) {
+      const response = new Response();
+
+      return response.internalError(error);
+    }
+  }
+
 }

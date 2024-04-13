@@ -92,9 +92,9 @@ router.post(
     }
 
     const files = req.files as Express.Multer.File[];
-    const images=files.map((e) => e.path);
+    const images = files.map((e) => e.path);
 
-    const { status, result } = await productService.create(productDto,images);
+    const { status, result } = await productService.create(productDto, images);
 
     res.status(status).json(result);
   }
@@ -199,6 +199,29 @@ router.get(
     const { status, result } = await productService.relatedProducts({
       id,
     });
+
+    res.status(status).json(result);
+  }
+);
+
+router.get(
+  "/:id/myRating",
+  authenticateToken,
+  authorization(["User"]),
+  productParamValidation,
+  handleValidationError,
+  async (req: JWTRequest, res: Response) => {
+    const { id } = req.params;
+    const userId = req.auth!.id;
+
+    const productService = new ProductService();
+
+    const { status, result } = await productService.myRating(
+      {
+        id,
+      },
+      { userId }
+    );
 
     res.status(status).json(result);
   }

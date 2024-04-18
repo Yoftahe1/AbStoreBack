@@ -326,6 +326,12 @@ export default class UserService {
         return response.conflict("User doesn't exist.");
       }
 
+      if (user.status?.isBanned) {
+        const response = new Response();
+
+        return response.conflict(`You are banned b/c ${user.status?.banReason}.`);
+      }
+
       const passwordMatch = await bcrypt.compare(password, user.password);
 
       if (!passwordMatch) {

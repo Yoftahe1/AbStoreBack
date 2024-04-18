@@ -14,7 +14,6 @@ function handleAuthentication(
     });
   }
 
-  console.log(err)
   return res.status(401).json({
     data: {},
     message: "Unauthenticated",

@@ -100,7 +100,6 @@ export default class AdminService {
         "Admin has been create successfully"
       );
     } catch (error) {
-      console.log(error);
       const response = new Response();
 
       return response.internalError(error);

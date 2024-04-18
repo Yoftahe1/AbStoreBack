@@ -1,6 +1,7 @@
 import Product from "../models/product";
 import Response from "../utils/response";
 import {
+  IEditProduct,
   IParams,
   IProduct,
   IProductQuery,
@@ -159,6 +160,42 @@ export default class ProductService {
     }
   }
 
+  async edit(editProduct: IEditProduct, images: string[]) {
+    const { id, name, description, price, category, types } = editProduct;
+
+    try {
+      const productExists = await Product.findById(id);
+
+      if (!productExists) {
+        const response = new Response();
+
+        return response.notFound("Product doesn't exist.");
+      }
+
+      await Product.updateOne(
+        { _id: id },
+        {
+          $push: { images: { $each: images } },
+          $set: {
+            name,
+            description,
+            price,
+            category,
+            types,
+          },
+        }
+      );
+
+      const response = new Response();
+
+      return response.created({ id }, "Product has been edited successfully.");
+    } catch (error) {
+      const response = new Response();
+
+      return response.internalError(error);
+    }
+  }
+
   async delete(params: IParams) {
     const { id } = params;
 
@@ -283,7 +320,6 @@ export default class ProductService {
         (r) => r.userId.toString() === userId
       );
 
-
       if (typeof alreadyRated === "number" && alreadyRated > -1) {
         await Product.findOneAndUpdate(
           { _id: id, "ratings.userId": userId },
@@ -321,10 +357,9 @@ export default class ProductService {
         return response.notFound("Product doesn't exist.");
       }
 
-      const alreadyRated = productExists.ratings?.findIndex(
-        (r) => {
-          return r.userId.toString() === userId}
-      );
+      const alreadyRated = productExists.ratings?.findIndex((r) => {
+        return r.userId.toString() === userId;
+      });
 
       let myRating: number;
       typeof alreadyRated === "number" && alreadyRated > -1

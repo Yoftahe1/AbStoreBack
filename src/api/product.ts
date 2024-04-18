@@ -10,6 +10,7 @@ import {
   ratingProductValidation,
   productParamValidation,
   reviewProductValidation,
+  editProductValidation,
 } from "../middleware/validation/product";
 import authenticateToken from "../middleware/auth/authenticateToken";
 import authorization from "../middleware/auth/authorization";
@@ -95,6 +96,38 @@ router.post(
     const images = files.map((e) => e.path);
 
     const { status, result } = await productService.create(productDto, images);
+
+    res.status(status).json(result);
+  }
+);
+
+router.patch(
+  "/:id/edit",
+  authenticateToken,
+  authorization(["Admin", "Owner"]),
+  upload.array("files", 4),
+  editProductValidation,
+  handleValidationError,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const productDto = req.body;
+    const productService = new ProductService();
+
+    // if (req.files === undefined || req.files!.length === 0) {
+    //   return res.status(404).json({
+    //     data: {},
+    //     message: "Image is required to create product",
+    //     error: [],
+    //   });
+    // }
+
+    const files = req.files as Express.Multer.File[];
+    const images = files.map((e) => e.path);
+
+    const { status, result } = await productService.edit(
+      { id, ...productDto },
+      images
+    );
 
     res.status(status).json(result);
   }

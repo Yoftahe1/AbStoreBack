@@ -191,7 +191,6 @@ export default class OrderService {
         "Order has been created successfully."
       );
     } catch (error) {
-      console.log(error);
       const response = new Response();
 
       return response.internalError(error);

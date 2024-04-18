@@ -26,6 +26,16 @@ export interface IProduct {
   price: number;
   types: IType[];
 }
+
+export interface IEditProduct {
+  id:string;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  types: IType[];
+}
+
 export interface IReviewsQuery {
   page: number;
 }

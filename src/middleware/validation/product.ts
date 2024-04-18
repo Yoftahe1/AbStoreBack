@@ -36,18 +36,46 @@ const createProductValidation = [
     })
     .withMessage("Please provide at least one type with quantity and color"),
 
-  // body("images")
-  //   .custom((value) => {
-  //     if (value === undefined || !Array.isArray(value) || value.length < 1) {
-  //       return false;
-  //     }
-  //     if (value.every((url: any) => validator.isURL(url))) {
-  //       return true;
-  //     } else {
-  //       return false;
-  //     }
-  //   })
-  //   .withMessage("Images must at least one valid URL"),
+];
+
+const editProductValidation = [
+  param("id")
+  .trim()
+  .notEmpty()
+  .isString()
+  .withMessage("product id must be valid mongodb object id"),
+  body("name").trim().notEmpty().withMessage("Name filed is required"),
+  body("description")
+    .trim()
+    .notEmpty()
+    .withMessage("Description filed is required"),
+
+  body("category").isIn(catagories).withMessage("Please select valid category"),
+
+  body("price")
+    .isFloat({ min: 1 })
+    .withMessage("Price must be greater than one"),
+
+  body("types")
+    .custom((value) => {
+      if (value === undefined || !Array.isArray(value) || value.length < 1) {
+        return false;
+      }
+
+      if (
+        value.every(
+          (element: { quantity: string; color: string }) =>
+            validator.isInt(element.quantity, { min: 1 }) &&
+            validator.isHexColor(element.color)
+        )
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    })
+    .withMessage("Please provide at least one type with quantity and color"),
+
 ];
 
 const productQueryValidation = [
@@ -89,6 +117,7 @@ const productParamValidation = [
 
 export {
   createProductValidation,
+  editProductValidation,
   ratingProductValidation,
   productQueryValidation,
   reviewProductValidation,

@@ -135,6 +135,8 @@ export default class ProductService {
   async create(newProduct: IProduct, images: string[]) {
     const { name, description, price, category, types } = newProduct;
 
+    const today = new Date().toISOString();
+
     try {
       const product = new Product({
         name,
@@ -143,6 +145,8 @@ export default class ProductService {
         images,
         price,
         types,
+        createdAt: today,
+        updatedAt: today,
       });
 
       const result = await product.save();
@@ -394,7 +398,16 @@ export default class ProductService {
       const products = await Product.find({
         _id: { $ne: id },
         category: product.category,
-      }).limit(pageSize);
+      })
+        .select({
+          name: 1,
+          description: 1,
+          images: 1,
+          price: 1,
+          category: 1,
+          rating: { $ifNull: [{ $avg: "$ratings.rating" }, 0] },
+        })
+        .limit(pageSize);
 
       const response = new Response();
 
@@ -416,6 +429,14 @@ export default class ProductService {
       const pageSize = config.pageSize;
 
       const products = await Product.find()
+        .select({
+          name: 1,
+          description: 1,
+          images: 1,
+          price: 1,
+          category: 1,
+          rating: { $ifNull: [{ $avg: "$ratings.rating" }, 0] },
+        }) 
         .sort({ createdAt: -1 })
         .limit(pageSize);
 

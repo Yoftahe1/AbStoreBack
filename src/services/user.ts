@@ -82,6 +82,7 @@ export default class UserService {
 
       const hashedPassword = await bcrypt.hash(password, config.saltRound);
 
+      const today = new Date().toISOString();
 
       const user = new User({
         firstName,
@@ -90,11 +91,13 @@ export default class UserService {
         password: hashedPassword,
         location,
         phoneNumber,
+        createdAt: today,
+        updatedAt: today,
       });
       const result = await user.save();
 
       const payload = {
-        id:  result._id,
+        id: result._id,
         firstName,
         lastName,
         email,
@@ -103,16 +106,14 @@ export default class UserService {
         role: "User",
       };
 
-      const token = jwt.sign(
-        payload,
-        config.secretKey
-      );
+      const token = jwt.sign(payload, config.secretKey);
 
       const response = new Response();
 
       return response.created(
         {
-          ...payload,token
+          ...payload,
+          token,
         },
         "User has been create successfully"
       );
@@ -329,7 +330,9 @@ export default class UserService {
       if (user.status?.isBanned) {
         const response = new Response();
 
-        return response.conflict(`You are banned b/c ${user.status?.banReason}.`);
+        return response.conflict(
+          `You are banned b/c ${user.status?.banReason}.`
+        );
       }
 
       const passwordMatch = await bcrypt.compare(password, user.password);
@@ -418,5 +421,4 @@ export default class UserService {
       return response.internalError(error);
     }
   }
-
 }

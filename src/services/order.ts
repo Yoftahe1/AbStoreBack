@@ -153,11 +153,16 @@ export default class OrderService {
 
       const verificationKey = uuidv4();
 
+      
+    const today=new Date().toISOString()
+    
       const order = new Order({
         userId,
         products: productDb,
         totalPrice,
         verificationKey,
+        createdAt:today,
+        updatedAt:today,
       });
 
       const message = orderVerification(email, verificationKey);

@@ -101,6 +101,29 @@ router.post(
   }
 );
 
+router.post(
+  "/image",
+  upload.array("files", 4),
+  (req: Request, res: Response) => {
+    if (req.files === undefined || req.files!.length === 0) {
+      return res.status(404).json({
+        data: {},
+        message: "Image is required to create product",
+        error: [],
+      });
+    }
+
+    const files = req.files as Express.Multer.File[];
+    const images = files.map((e) => e.path.split("\\")[1]);
+
+    res.status(201).json({
+      data: {images},
+      message: "Image uploaded successfully",
+      error: [],
+    });
+  }
+);
+
 router.patch(
   "/:id/edit",
   authenticateToken,

@@ -114,7 +114,7 @@ router.post(
     }
 
     const files = req.files as Express.Multer.File[];
-    const images = files.map((e) => e.path.split("\\")[1]);
+    const images = files.map((e) => e.path);
 
     res.status(201).json({
       data: {images},

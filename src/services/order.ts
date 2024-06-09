@@ -9,6 +9,8 @@ import Product from "../models/product";
 import transporter from "../utils/transporter";
 import { orderVerification } from "../email";
 import Driver from "../models/driver";
+import { Chapa } from "chapa-nodejs";
+import User from "../models/user";
 
 export default class OrderService {
   async getOrders(
@@ -16,7 +18,11 @@ export default class OrderService {
     getUser: { userId: Types.ObjectId } | null
   ) {
     try {
-      const totalCount = await Order.countDocuments({ status, ...getUser });
+      const totalCount = await Order.countDocuments({
+        isPaid: true,
+        status,
+        ...getUser,
+      });
 
       const pageSize = config.pageSize;
 
@@ -36,6 +42,7 @@ export default class OrderService {
         },
         {
           $match: {
+            isPaid: true,
             status,
             ...getUser,
           },
@@ -55,7 +62,6 @@ export default class OrderService {
             productCount: { $size: "$products" },
           },
         },
-
       ])
         .skip((page - 1) * pageSize)
         .limit(pageSize);
@@ -109,6 +115,8 @@ export default class OrderService {
     try {
       let totalPrice = 20;
 
+      const user = await User.findById(userId);
+
       for (const item of products) {
         const product = await Product.findById(item.id);
 
@@ -153,16 +161,15 @@ export default class OrderService {
 
       const verificationKey = uuidv4();
 
-      
-    const today=new Date().toISOString()
-    
+      const today = new Date().toISOString();
+
       const order = new Order({
         userId,
         products: productDb,
         totalPrice,
         verificationKey,
-        createdAt:today,
-        updatedAt:today,
+        createdAt: today,
+        updatedAt: today,
       });
 
       const message = orderVerification(email, verificationKey);
@@ -190,11 +197,53 @@ export default class OrderService {
         product!.save();
       }
 
+      const chapa = new Chapa({
+        secretKey: config.ChapaSecretKey,
+      });
+
+      const tx_ref = result._id.toString();
+
+      const chapaResponse = await chapa.initialize({
+        first_name: user!.firstName,
+        last_name: user!.lastName,
+        email: user!.email,
+        currency: "ETB",
+        amount: totalPrice.toString(),
+        return_url:`https://abstoreuser.onrender.com/success/${tx_ref}`,
+        tx_ref: tx_ref,
+      });
+
       const response = new Response();
       return response.created(
-        { id: "result._id" },
+        chapaResponse,
         "Order has been created successfully."
       );
+    } catch (error) {
+      const response = new Response();
+
+      return response.internalError(error);
+    }
+  }
+
+  async verifyOrder(id: string) {
+    try {
+      const chapa = new Chapa({
+        secretKey: config.ChapaSecretKey,
+      });
+
+      const chapaResponse = await chapa.verify({
+        tx_ref: id,
+      });
+
+      if (chapaResponse.data.status !== "success") {
+        const response = new Response();
+        return response.created({ id }, "Order payment failed.");
+      }
+
+      await Order.findByIdAndUpdate(new Types.ObjectId(id), { isPaid: true });
+
+      const response = new Response();
+      return response.created({ id }, "Order payment successfully.");
     } catch (error) {
       const response = new Response();
 

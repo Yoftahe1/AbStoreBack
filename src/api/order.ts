@@ -9,6 +9,7 @@ import {
   orderDriverValidation,
   orderDeliveriesValidation,
   orderDeliverValidation,
+  orderVerificationValidation
 } from "../middleware/validation/order";
 import handleValidationError from "../middleware/validation/handleError";
 import { Types } from "mongoose";
@@ -140,4 +141,22 @@ router.patch(
     res.status(status).json(result);
   }
 );
+
+router.patch(
+  "/verifyOrder/:id",
+  authenticateToken,
+  authorization(["User"]),
+  orderVerificationValidation,
+  handleValidationError,
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const orderService = new OrderService();
+
+    const { status, result } = await orderService.verifyOrder(id);
+
+    res.status(status).json(result);
+  }
+);
+
 export default router;

@@ -54,4 +54,11 @@ const orderDeliverValidation = [
     .withMessage("Key filed is required"), 
 ];
 
-export { orderQueryValidation ,orderParamValidation,orderDriverValidation,orderDeliveriesValidation,orderDeliverValidation};
+const orderVerificationValidation = [
+  param("id")
+    .trim()
+    .notEmpty()
+    .isString()
+    .withMessage("Order id must be valid mongodb object id"),
+];
+export { orderQueryValidation ,orderParamValidation,orderDriverValidation,orderDeliveriesValidation,orderDeliverValidation,orderVerificationValidation};

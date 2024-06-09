@@ -12,6 +12,7 @@ interface IOrder {
   products: IProducts[];
   status?: "Processing" | "Delivering" | "Delivered";
   verificationKey: string;
+  isPaid: boolean;
   driverId?: Types.ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
@@ -42,6 +43,7 @@ const orderSchema = new Schema<IOrder>({
   },
   driverId: { type: Schema.Types.ObjectId, ref: "driver", required: false },
   verificationKey: { type: String, required: true },
+  isPaid: { type: Boolean, default: false, required: true },
   createdAt: { type: Date, default: Date.now() },
   updatedAt: { type: Date, default: Date.now() },
 });

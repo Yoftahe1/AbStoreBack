@@ -10,5 +10,6 @@ export default {
   pageSize: Number(process.env.PAGE_SIZE),
   saltRound: Number(process.env.SALT_ROUND),
   databaseURL: `${process.env.DATABASE_URL}`,
+  ChapaSecretKey:`${process.env.CHAPA_SECRET_KEY}`,
   catagories: ["Man", "Woman"],
 };

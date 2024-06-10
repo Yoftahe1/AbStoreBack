@@ -144,8 +144,6 @@ router.patch(
 
 router.patch(
   "/verifyOrder/:id",
-  authenticateToken,
-  authorization(["User"]),
   orderVerificationValidation,
   handleValidationError,
   async (req: Request, res: Response) => {
